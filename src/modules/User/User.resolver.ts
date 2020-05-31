@@ -20,7 +20,7 @@ export default class UserResolver {
 
     @Query(type => User)
     getUser(userId: string): User | undefined {
-        return this.userService.getOne(userId);
+        return this.userService.get(userId);
     }
 
     @Query(type => [User])

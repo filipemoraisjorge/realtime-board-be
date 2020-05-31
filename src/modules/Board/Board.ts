@@ -12,47 +12,41 @@ export default class Board {
     @Field(type => ID)
     id: string;
 
-    usersCollection: Map<string, User>;
+    private _boardUsersIds: Set<string>;
+    get userIds(): string[] {
+        return Array.from(this._boardUsersIds.values());
+    }
+
     shouldPublish: boolean = false;
 
     private intervalId?: NodeJS.Timeout;
 
     constructor() {
         this.id = uuid();
-        this.usersCollection = new Map<string, User>()
+        this._boardUsersIds = new Set<string>()
     }
 
-
-    @Field(type => [User])
-    users(): User[] {
-        return Array.from(this.usersCollection.values());
+    public hasUser(userId: string): boolean {
+        return this._boardUsersIds.has(userId);
     }
 
-    public startBoardStream(publish: Publisher<User[]>) {
+    public startBoardStream(publish: Publisher<User[]>, populateUsers: (userIds: string[]) => User[] ) {
         //•	Every 1000/60 = 16ms sends Users to each User in Users
         const frameRate = 18;
         this.intervalId = setInterval(async () => {
             if (this.shouldPublish) {
-                const payload: User[] = this.users();
+                const payload: User[] = populateUsers(this.userIds);
                 await publish(payload || []);
                 this.shouldPublish = false;
             }
         }, 1000 / frameRate)
     }
 
-    public updateUserPoint(userId: string, point: Point): void {
-        const user = this.usersCollection.get(userId);
-        if (user) {
-            this.shouldPublish = user.setPoint(point);
-            this.usersCollection.set(userId, user);
-        }
-    }
-
     public addUser(user: User): boolean {
-        return !!(user && this.usersCollection.set(user.id, user));
+        return !!(user && this._boardUsersIds.add(user.id));
     }
 
     public removeUser(user: User): boolean {
-        return user && this.usersCollection.delete(user.id);
+        return user && this._boardUsersIds.delete(user.id);
     }
 }

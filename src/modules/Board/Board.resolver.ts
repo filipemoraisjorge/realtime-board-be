@@ -6,38 +6,52 @@ import {
     Resolver,
     Root,
     Subscription,
-    PubSub
+    PubSub, FieldResolver
 } from "type-graphql";
 import Point, {PointInput} from "../Point/Point";
 import Board from "./Board";
 import {User} from "../User/User";
 import {UserService} from "../User/User.service";
 import {Service} from "typedi";
+import {BoardService} from "./Board.service";
 
 @Service()
-@Resolver()
+@Resolver(of => Board)
 export class BoardResolver {
-    private boardsCollection: Map<string, Board> = new Map();
 
     constructor(
         private readonly userService: UserService,
+        private readonly boardService: BoardService,
     ) {}
+
+    private populateUsers() {
+        return (userIds: string[]) => this.populateUsersWithUserService(userIds);
+    }
+
+    private populateUsersWithUserService(userIds: string[]): User[] {
+        return userIds.map(userId => this.userService.get(userId));
+    }
+
+    @FieldResolver(returns => [User])
+    users(@Root() board: Board): User[] {
+        return this.populateUsers()(board.userIds);
+    }
 
     @Query(returns => Board, {nullable: true})
     getBoard(@Arg("boardId") boardId: string): Board | undefined {
-        return this.boardsCollection.get(boardId);
+        return this.boardService.get(boardId);
     }
 
     @Query(returns => [Board])
     getBoards(): Board[] {
-        return Array.from(this.boardsCollection.values())
+        return this.boardService.getAll();
     }
 
     @Query(returns => [User], {nullable: true})
     getBoardUsers(@Arg("boardId") boardId: string): User[] | undefined {
         const board = this.getBoard(boardId);
         if (board) {
-            return board.users();
+            return this.populateUsers()(board.userIds);
         } else {
             return;
         }
@@ -48,8 +62,8 @@ export class BoardResolver {
         @PubSub("BOARD") publish: Publisher<User[]>,
     ): Board {
         const board = new Board();
-        this.boardsCollection.set(board.id, board);
-        board.startBoardStream(publish);
+        this.boardService.set(board);
+        board.startBoardStream(publish, this.populateUsers());
         return board;
     }
 
@@ -60,7 +74,14 @@ export class BoardResolver {
         @Arg("point") point: PointInput
     ): Board | undefined {
         const board = this.getBoard(boardId);
-        board?.updateUserPoint(userId, point);
+        if (board) {
+            if(board.hasUser(userId)) {
+                const user = this.userService.get(userId);
+                if (user) {
+                    board.shouldPublish = user.setPoint(point);
+                }
+            }
+        }
         return board;
     }
 
@@ -70,7 +91,7 @@ export class BoardResolver {
         @Arg("userId") userId: string,
     ): boolean {
         const board = this.getBoard(boardId);
-        const user = this.userService.getOne(userId);
+        const user = this.userService.get(userId);
         return !!board && !!user && board.addUser(user);
     }
 
@@ -80,7 +101,7 @@ export class BoardResolver {
         @Arg("userId") userId: string,
     ): boolean {
         const board = this.getBoard(boardId);
-        const user = this.userService.getOne(userId);
+        const user = this.userService.get(userId);
         return !!board && !!user && board.removeUser(user);
     }
 

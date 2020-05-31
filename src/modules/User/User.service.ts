@@ -1,8 +1,9 @@
 import {Service, Inject} from "typedi";
 import {User} from "./User";
+import Serviceable from "../Types/service.interface";
 
 @Service()
-export class UserService {
+export class UserService implements Serviceable<User> {
     @Inject("USERS")
     private readonly items: Map<string, User> = new Map();
 
@@ -10,8 +11,12 @@ export class UserService {
         return Array.from(this.items.values());
     }
 
-    getOne(id: string): User | undefined {
-        return this.items.get(id);
+    get(id: string): User {
+        const user = this.items.get(id);
+        if (user === undefined) {
+            throw 'User.service>get: User not found'
+        }
+        return user;
     }
 
     set(user: User): void {
