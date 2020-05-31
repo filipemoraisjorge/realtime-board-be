@@ -6,7 +6,7 @@ import {
     Resolver,
     Root,
     Subscription,
-    PubSub, FieldResolver
+    PubSub, FieldResolver, ID
 } from "type-graphql";
 import Point, {PointInput} from "../Point/Point";
 import Board from "./Board";
@@ -14,6 +14,7 @@ import {User} from "../User/User";
 import {UserService} from "../User/User.service";
 import {Service} from "typedi";
 import {BoardService} from "./Board.service";
+import {UUID} from "../Types/uuid.type";
 
 @Service()
 @Resolver(of => Board)
@@ -25,10 +26,10 @@ export class BoardResolver {
     ) {}
 
     private populateUsers() {
-        return (userIds: string[]) => this.populateUsersWithUserService(userIds);
+        return (userIds: UUID[]) => this.populateUsersWithUserService(userIds);
     }
 
-    private populateUsersWithUserService(userIds: string[]): User[] {
+    private populateUsersWithUserService(userIds: UUID[]): User[] {
         return userIds.map(userId => this.userService.get(userId));
     }
 
@@ -38,7 +39,7 @@ export class BoardResolver {
     }
 
     @Query(returns => Board, {nullable: true})
-    getBoard(@Arg("boardId") boardId: string): Board | undefined {
+    getBoard(@Arg("boardId") boardId: UUID): Board | undefined {
         return this.boardService.get(boardId);
     }
 
@@ -48,7 +49,7 @@ export class BoardResolver {
     }
 
     @Query(returns => [User], {nullable: true})
-    getBoardUsers(@Arg("boardId") boardId: string): User[] | undefined {
+    getBoardUsers(@Arg("boardId") boardId: UUID): User[] | undefined {
         const board = this.getBoard(boardId);
         if (board) {
             return this.populateUsers()(board.userIds);
@@ -69,8 +70,8 @@ export class BoardResolver {
 
     @Mutation(returns => Board, {nullable: true})
     updateUserPoint(
-        @Arg("boardId") boardId: string,
-        @Arg("userId") userId: string,
+        @Arg("boardId") boardId: UUID,
+        @Arg("userId") userId: UUID,
         @Arg("point") point: PointInput
     ): Board | undefined {
         const board = this.getBoard(boardId);
@@ -87,8 +88,8 @@ export class BoardResolver {
 
     @Mutation(returns => Boolean, {nullable: true})
     joinBoard(
-        @Arg("boardId") boardId: string,
-        @Arg("userId") userId: string,
+        @Arg("boardId") boardId: UUID,
+        @Arg("userId") userId: UUID,
     ): boolean {
         const board = this.getBoard(boardId);
         const user = this.userService.get(userId);
@@ -97,8 +98,8 @@ export class BoardResolver {
 
     @Mutation(returns => Boolean, {nullable: true})
     exitBoard(
-        @Arg("boardId") boardId: string,
-        @Arg("userId") userId: string,
+        @Arg("boardId") boardId: UUID,
+        @Arg("userId") userId: UUID,
     ): boolean {
         const board = this.getBoard(boardId);
         const user = this.userService.get(userId);

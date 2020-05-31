@@ -1,13 +1,13 @@
-import {v4 as uuid} from 'uuid';
 // @ts-ignore
 import stringToColor from 'string-to-color';
 import Point from "../Point/Point";
 import {Field, ID, ObjectType} from "type-graphql";
+import {newUUID, UUID} from "../Types/uuid.type";
 
 @ObjectType()
 export class User {
     @Field(type => ID)
-    id: string;
+    id: UUID;
 
     @Field()
     point: Point;
@@ -16,7 +16,7 @@ export class User {
     color: string;
 
     constructor(point?: Point) {
-        this.id = uuid() ;
+        this.id = newUUID();
         this.point = point || new Point();
         this.color = stringToColor(this.id)
     }

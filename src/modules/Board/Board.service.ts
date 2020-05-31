@@ -1,17 +1,18 @@
 import {Service, Inject} from "typedi";
 import Serviceable from "../Types/service.interface";
 import Board from "./Board";
+import {UUID} from "../Types/uuid.type";
 
 @Service()
 export class BoardService implements Serviceable<Board> {
     @Inject("BOARDS")
-    private readonly items: Map<string, Board> = new Map();
+    private readonly items: Map<UUID, Board> = new Map();
 
     getAll(): Board[] {
         return Array.from(this.items.values());
     }
 
-    get(id: string): Board {
+    get(id: UUID): Board {
         const board = this.items.get(id);
         if (board === undefined) {
             throw 'Board.service>get: Board not found'

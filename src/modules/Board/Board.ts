@@ -1,19 +1,15 @@
-import {v4 as uuid} from 'uuid';
-import Point from '../Point/Point';
-import {Field, ID, ObjectType, PubSub, Publisher} from "type-graphql";
+import {Field, ID, ObjectType, Publisher} from "type-graphql";
 import {User} from '../User/User';
-import UserResolver from '../User/User.resolver';
-import {Service} from "typedi";
-import {UserService} from "../User/User.service";
+import {newUUID, UUID} from "../Types/uuid.type";
 
 @ObjectType()
 export default class Board {
 
     @Field(type => ID)
-    id: string;
+    id: UUID;
 
-    private _boardUsersIds: Set<string>;
-    get userIds(): string[] {
+    private _boardUsersIds: Set<UUID>;
+    get userIds(): UUID[] {
         return Array.from(this._boardUsersIds.values());
     }
 
@@ -22,15 +18,15 @@ export default class Board {
     private intervalId?: NodeJS.Timeout;
 
     constructor() {
-        this.id = uuid();
-        this._boardUsersIds = new Set<string>()
+        this.id = newUUID();
+        this._boardUsersIds = new Set<UUID>()
     }
 
-    public hasUser(userId: string): boolean {
+    public hasUser(userId: UUID): boolean {
         return this._boardUsersIds.has(userId);
     }
 
-    public startBoardStream(publish: Publisher<User[]>, populateUsers: (userIds: string[]) => User[] ) {
+    public startBoardStream(publish: Publisher<User[]>, populateUsers: (userIds: UUID[]) => User[] ) {
         //•	Every 1000/60 = 16ms sends Users to each User in Users
         const frameRate = 18;
         this.intervalId = setInterval(async () => {

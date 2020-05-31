@@ -2,6 +2,7 @@ import {Mutation, Query, Resolver} from "type-graphql";
 import {User} from "./User";
 import {Service} from "typedi";
 import {UserService} from "./User.service";
+import {UUID} from "../Types/uuid.type";
 
 @Service()
 @Resolver(of => User)
@@ -19,7 +20,7 @@ export default class UserResolver {
     }
 
     @Query(type => User)
-    getUser(userId: string): User | undefined {
+    getUser(userId: UUID): User | undefined {
         return this.userService.get(userId);
     }
 
