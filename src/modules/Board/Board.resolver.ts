@@ -1,20 +1,24 @@
 import {
     Arg,
+    Args,
+    FieldResolver,
+    ID,
     Mutation,
     Publisher,
+    PubSub,
     Query,
     Resolver,
     Root,
-    Subscription,
-    PubSub, FieldResolver, ID
+    Subscription
 } from "type-graphql";
-import Point, {PointInput} from "../Point/Point";
+import {PointInput} from "../Point/Point";
 import Board from "./Board";
 import {User} from "../User/User";
 import {UserService} from "../User/User.service";
 import {Service} from "typedi";
 import {BoardService} from "./Board.service";
 import {UUID} from "../Types/uuid.type";
+import {UserBoardConnectArgs, UserBoardConnectE, UserBoardPayload} from "./Board.types";
 
 @Service()
 @Resolver(of => Board)
@@ -39,7 +43,7 @@ export class BoardResolver {
     }
 
     @Query(returns => Board, {nullable: true})
-    getBoard(@Arg("boardId") boardId: UUID): Board | undefined {
+    getBoard(@Arg("boardId") boardId: UUID): Board {
         return this.boardService.get(boardId);
     }
 
@@ -87,29 +91,27 @@ export class BoardResolver {
     }
 
     @Mutation(returns => Boolean, {nullable: true})
-    joinBoard(
-        @Arg("boardId") boardId: UUID,
-        @Arg("userId") userId: UUID,
-    ): boolean {
+    async userBoardConnect(
+        @Args() {boardId, userId, connect}: UserBoardConnectArgs,
+        @PubSub("USER_BOARD_CONNECT") publish: Publisher<UserBoardPayload>
+    ): Promise<boolean> {
         const board = this.getBoard(boardId);
         const user = this.userService.get(userId);
-        return !!board && !!user && board.addUser(user);
+        await publish({user, boardId: board.id, connect});
+        return !!board && !!user &&
+        connect === UserBoardConnectE.JOIN
+            ? board.addUser(user)
+            : board.removeUser(user);
     }
 
-    @Mutation(returns => Boolean, {nullable: true})
-    exitBoard(
-        @Arg("boardId") boardId: UUID,
-        @Arg("userId") userId: UUID,
-    ): boolean {
-        const board = this.getBoard(boardId);
-        const user = this.userService.get(userId);
-        return !!board && !!user && board.removeUser(user);
+    @Subscription({
+        topics: "USER_BOARD_CONNECT",
+        filter: ({payload, args}) => payload.boardId === args.boardId
+    })
+    newUserBoardConnect(
+        @Root() payload: UserBoardPayload,
+        @Arg('boardId', returns => ID) userId: string
+    ): UserBoardPayload {
+        return payload;
     }
-
-    @Subscription(returns => [User], {topics: "BOARD"})
-    newUserPoints(@Root() userPointsPayload: User[]): User[] {
-        return userPointsPayload;
-    }
-
 }
-
