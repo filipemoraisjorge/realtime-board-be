@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 4000;
 
 // put sample recipes in container
 Container.set({ id: "USERS", factory: () => new Map() });
+Container.set({ id: "BOARDS", factory: () => new Map() });
 
 async function bootstrap() {
 
