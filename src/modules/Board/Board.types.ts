@@ -1,6 +1,7 @@
 import {ArgsType, Field, ID, ObjectType, registerEnumType} from "type-graphql";
 import {UUID} from "../Types/uuid.type";
 import {User} from "../User/User";
+import Board from "./Board";
 
 @ArgsType()
 export class UserBoardConnectArgs {
@@ -15,7 +16,7 @@ export class UserBoardConnectArgs {
 @ObjectType()
 export class UserBoardPayload {
     @Field(type => ID)
-    boardId!: UUID;
+    board!: Board;
     @Field()
     user!: User;
     @Field(type => UserBoardConnectE)

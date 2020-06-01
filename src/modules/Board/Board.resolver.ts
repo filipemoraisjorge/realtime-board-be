@@ -97,7 +97,7 @@ export class BoardResolver {
     ): Promise<boolean> {
         const board = this.getBoard(boardId);
         const user = this.userService.get(userId);
-        await publish({user, boardId: board.id, connect});
+        await publish({user, board, connect});
         return !!board && !!user &&
         connect === UserBoardConnectE.JOIN
             ? board.addUser(user)
@@ -106,7 +106,7 @@ export class BoardResolver {
 
     @Subscription({
         topics: "USER_BOARD_CONNECT",
-        filter: ({payload, args}) => payload.boardId === args.boardId
+        filter: ({payload, args}) => payload.board.id === args.boardId
     })
     newUserBoardConnect(
         @Root() payload: UserBoardPayload,
