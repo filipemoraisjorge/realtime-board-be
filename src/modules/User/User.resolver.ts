@@ -21,7 +21,7 @@ export default class UserResolver {
     }
 
     @Query(type => User)
-    getUser(userId: UUID): User | undefined {
+    getUser(@Arg("userId", type => ID) userId: UUID): User {
         return this.userService.get(userId);
     }
 

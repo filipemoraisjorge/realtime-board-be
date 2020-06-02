@@ -15,7 +15,7 @@ export class UserBoardConnectArgs {
 
 @ObjectType()
 export class UserBoardPayload {
-    @Field(type => ID)
+    @Field()
     board!: Board;
     @Field()
     user!: User;

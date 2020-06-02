@@ -43,7 +43,7 @@ export class BoardResolver {
     }
 
     @Query(returns => Board, {nullable: true})
-    getBoard(@Arg("boardId") boardId: UUID): Board {
+    getBoard(@Arg("boardId", type => ID) boardId: UUID): Board {
         return this.boardService.get(boardId);
     }
 
@@ -53,13 +53,9 @@ export class BoardResolver {
     }
 
     @Query(returns => [User], {nullable: true})
-    getBoardUsers(@Arg("boardId") boardId: UUID): User[] | undefined {
+    getBoardUsers(@Arg("boardId", type => ID) boardId: UUID): User[] {
         const board = this.getBoard(boardId);
-        if (board) {
-            return this.populateUsers()(board.userIds);
-        } else {
-            return;
-        }
+        return this.populateUsers()(board.userIds);
     }
 
     @Mutation()
@@ -69,24 +65,6 @@ export class BoardResolver {
         const board = new Board();
         this.boardService.set(board);
         board.startBoardStream(publish, this.populateUsers());
-        return board;
-    }
-
-    @Mutation(returns => Board, {nullable: true})
-    updateUserPoint(
-        @Arg("boardId") boardId: UUID,
-        @Arg("userId") userId: UUID,
-        @Arg("point") point: PointInput
-    ): Board | undefined {
-        const board = this.getBoard(boardId);
-        if (board) {
-            if(board.hasUser(userId)) {
-                const user = this.userService.get(userId);
-                if (user) {
-                    board.shouldPublish = user.setPoint(point);
-                }
-            }
-        }
         return board;
     }
 
@@ -106,7 +84,9 @@ export class BoardResolver {
 
     @Subscription({
         topics: "USER_BOARD_CONNECT",
-        filter: ({payload, args}) => payload.board.id === args.boardId
+        filter: ({payload, args}) => {
+            return payload.board.id === args.boardId
+        }
     })
     newUserBoardConnect(
         @Root() payload: UserBoardPayload,
