@@ -31,16 +31,16 @@ export default class UserResolver {
     }
 
     @Mutation(returns => User, {nullable: true})
-    async updatePoint(
+    updatePoint(
         @Arg("userId") userId: UUID,
         @Arg("point") point: PointInput,
         @PubSub("USER_POINT") publish: Publisher<User>
-    ): Promise<User> {
+    ): User {
         const user = this.userService.get(userId);
         if (user) {
             user.setPoint(point);
-            await publish(user);
-            // throttle(publish(user), 1000 / 18)
+            // @ts-ignore
+            throttle(publish, 1000/60)(user)
         }
         return user;
     }
@@ -58,9 +58,9 @@ export default class UserResolver {
 
 }
 
+let inThrottle: boolean;
 // @ts-ignore
 const throttle = (func, limit: number) => {
-    let inThrottle: boolean;
     return function () {
         const args = arguments;
         // @ts-ignore
