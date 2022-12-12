@@ -12,7 +12,7 @@
   "dependencies": {
     "apollo-server": "^2.14.1",
     "class-validator": "0.12.2",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "graphql": "^15.0.0",
     "reflect-metadata": "^0.1.13",
     "string-to-color": "^2.1.4",
